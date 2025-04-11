@@ -4,110 +4,107 @@ import re
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.models import load_model
 import tensorflow as tf
-import streamlit as st
 
-st.set_page_config(page_title="Fake News Detector", page_icon="📰", layout="centered")
+# Page configuration
+st.set_page_config(page_title="📰 Fake News Detector", layout="centered", page_icon="🧠")
 
-
-# Initialize NLTK
+# Download stopwords
 nltk.download('stopwords')
 ps = PorterStemmer()
 
-# Load the model and vectorizer
+# Load model and vectorizer with caching
 @st.cache_resource
 def load_components():
     try:
-        model = tf.keras.models.load_model(
-            "fake_news_model.keras",
-            compile=False
-        )
-        model.compile()  
-        
-        # Load vectorizer
+        model = tf.keras.models.load_model("fake_news_model.keras", compile=False)
+        model.compile()
         with open("vectorizer.pkl", "rb") as f:
             vectorizer = pickle.load(f)
-            
         return model, vectorizer
     except Exception as e:
-        st.error(f"Loading failed: {str(e)}")
+        st.error(f"Failed to load model/vectorizer: {e}")
         return None, None
 
 model, vectorizer = load_components()
 
-
+# Preprocessing function
 def preprocess(text):
     text = re.sub('[^a-zA-Z]', ' ', text)
     text = text.lower().split()
     text = [ps.stem(word) for word in text if word not in stopwords.words('english')]
     return ' '.join(text)
 
+# Prediction function
 def predict_news(news_text):
     if model is None or vectorizer is None:
-        st.error("Model not loaded properly")
-        return False
-        
+        st.error("Model or vectorizer not loaded.")
+        return None
     cleaned = preprocess(news_text)
-    vectorized_input = vectorizer.transform([cleaned]).toarray()  
+    vectorized_input = vectorizer.transform([cleaned]).toarray()
     prediction = model.predict(vectorized_input)[0][0]
     return prediction > 0.5
 
-
-
-
-# Streamlit App
-# CSS
-def set_bg_image():
-    st.markdown(
-        f"""
+# Apply custom background and styles
+def apply_styles():
+    st.markdown("""
         <style>
-
-        .stApp {{
-            background-image: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.6)), 
-            url("https://images.pexels.com/photos/27164019/pexels-photo-27164019/free-photo-of-dried-pink-rose-on-yellowed-newspaper.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2");
+        body {
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .stApp {
+            background-image: linear-gradient(to bottom right, #f5f7fa, #c3cfe2);
             background-attachment: fixed;
             background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            color: black;
-        }}
-        .stButton>button {{
-            background-color: rgba(255, 255, 255, 0.8) !important;
-            border-radius: 10px !important;
+            color: #222;
+        }
+        .main-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            max-width: 700px;
+            margin: 2rem auto;
+        }
+        .stTextArea textarea {
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: 10px;
+        }
+        .stButton>button {
+            background-color: #4CAF50 !important;
+            color: white !important;
+            border-radius: 8px !important;
             padding: 10px 20px !important;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
-            color: black !important;  /* Changed from white to black */
-            border: 1px solid #ccc !important;
-            font-weight: bold !important;
-            transition: all 0.3s ease !important;
-        }}
-        /* Button hover effect */
-        .stButton>button:hover {{
-            background-color: rgba(240, 240, 240, 0.9) !important;
-            transform: translateY(-2px) !important;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2) !important;
-        }}
-
+            transition: 0.3s ease-in-out;
+        }
+        .stButton>button:hover {
+            background-color: #45a049 !important;
+            transform: scale(1.03);
+        }
         </style>
-        """,
-        unsafe_allow_html=True
-    )
+    """, unsafe_allow_html=True)
 
-set_bg_image()
+apply_styles()
 
-st.title("📰 Fake News Detector")
-st.markdown("Paste any news headline or paragraph and find out if it's **real or fake**.")
+# Main App Layout
+with st.container():
+    st.markdown("<div class='main-card'>", unsafe_allow_html=True)
+    st.title("📰 Fake News Detector")
+    st.markdown("Paste a news headline or article below to check if it's **real or fake**.")
 
-news_input = st.text_area("Enter the news text here:")
+    news_input = st.text_area("🖊️ Your News Text:", height=200, placeholder="Enter the news headline or article...")
 
-if st.button("Detect"):
-    if not news_input.strip():
-        st.warning("Please enter some news text first!")
-    else:
-        result = predict_news(news_input)
-        if result:
-            st.success("✅ This news is REAL.")
+    if st.button("🔍 Analyze"):
+        if not news_input.strip():
+            st.warning("⚠️ Please enter some news content.")
         else:
-            st.error("🚨 This news is FAKE.")
+            with st.spinner("Analyzing..."):
+                result = predict_news(news_input)
+            if result is None:
+                st.error("❌ Unable to analyze. Try again later.")
+            elif result:
+                st.success("✅ This news appears to be **REAL**.")
+            else:
+                st.error("🚨 This news appears to be **FAKE**.")
+    st.markdown("</div>", unsafe_allow_html=True)
