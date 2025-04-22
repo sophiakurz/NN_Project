@@ -15,7 +15,7 @@ if __name__ == "__main__":
     checkpoint = ModelCheckpoint(
         monitor="val_acc", mode="max", save_top_k=1, filename="best-fakenews"
     )
-    logger = CSVLogger("logs", name="fakenews_run")
+    logger = CSVLogger("distilbert_logs", name="fakenews_run")
 
     # Trainer
     trainer = Trainer(max_epochs=3, callbacks=[checkpoint], logger=logger)

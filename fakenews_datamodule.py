@@ -1,7 +1,7 @@
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset
-from transformers import BertTokenizer
+from transformers import DistilBertTokenizer
 from lightning import LightningDataModule
 from sklearn.model_selection import train_test_split
 
@@ -35,7 +35,7 @@ class FakeNewsDataModule(LightningDataModule):
         self.true_path = true_path
         self.fake_path = fake_path
         self.batch_size = batch_size
-        self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        self.tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
 
     def prepare_data(self):
         pass  # already have local files
