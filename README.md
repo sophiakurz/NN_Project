@@ -25,15 +25,19 @@ Contains labeled examples of real and fake news for supervised learning.
 ## 📂 Project Structure
 
 ├── app-fakenews.py # Main Streamlit app 
+
 ├── fake_news_model.keras # Trained deep learning model 
+
 ├── vectorizer.pkl # Pickled text vectorizer 
+
 ├── requirements.txt # Dependencies 
+
 └── README.md # You're here!
 
 
 ---
 ```yaml
-## 🧠 Model Overview
+🧠 Model Overview
 
 - Model Type: Binary Classifier (Real vs Fake)
 - Architecture: Deep Neural Network (can be extended to BERT or LSTM)
