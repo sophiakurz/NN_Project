@@ -106,11 +106,11 @@ streamlit run app-fakenews.py
 
 ## 🧑‍💻 Authors
 
-Alekhya Vittalam
-Ananya Agrawal
-Ananya Chembai
-Chehak Arora
-Sophia Kurz
+- Alekhya Vittalam
+- Ananya Agrawal
+- Ananya Chembai
+- Chehak Arora
+- Sophia Kurz
 
 
 
