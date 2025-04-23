@@ -8,6 +8,8 @@ from nltk.stem import PorterStemmer
 import tensorflow as tf
 from textblob import TextBlob
 import plotly.express as px
+import numpy as np
+from io import BytesIO
 
 # Download NLTK data
 nltk.download('stopwords')
@@ -62,7 +64,7 @@ def load_components():
     try:
         model = tf.keras.models.load_model("fake_news_model.keras", compile=False)
         model.compile()
-        with open("vectorization.pkl", "rb") as f:
+        with open("vectorizer.pkl", "rb") as f:
             vectorizer = pickle.load(f)
         return model, vectorizer
     except Exception as e:
@@ -141,34 +143,79 @@ with st.container():
                 - **Polarity Score:** `{polarity_score:.2f}`
                 """)
 
+
     if st.button("📊 Show Visual"):
         if not news_input.strip():
             st.warning("⚠️ Enter news to visualize.")
         else:
             prediction_score = predict_news(news_input)
             sentiment_label, polarity_score = analyze_sentiment(news_input)
+
             confidence = prediction_score if prediction_score > 0.5 else 1 - prediction_score
+            confidence = max(min(confidence, 1.0), 0.0)
             label = "Real" if prediction_score > 0.5 else "Fake"
 
+            # Save data point for visualization
             st.session_state.plot_data.append({
-                "text": news_input[:200],
+                "text": news_input[:200],  # limit preview text
                 "confidence": confidence,
                 "sentiment": polarity_score,
                 "label": label
             })
-
             df_viz = pd.DataFrame(st.session_state.plot_data)
 
+
+
+            # Build scatter plot
             fig = px.scatter(
                 df_viz,
                 x="confidence",
                 y="sentiment",
                 color="label",
-                hover_data=["text"],
+                hover_data={"text": True, "confidence": ':.2f', "sentiment": ':.2f'},
                 labels={"confidence": "Confidence", "sentiment": "Sentiment Polarity"},
                 title="🧠 Confidence vs Sentiment",
                 color_discrete_map={"Real": "green", "Fake": "red"}
             )
-            st.plotly_chart(fig, use_container_width=True)
+
+            fig.update_layout(
+                xaxis=dict(range=[0, 1]),
+                yaxis=dict(range=[-1, 1]),
+                height=500
+            )
+
+            # Annotate last point
+            fig.add_annotation(
+                x=confidence,
+                y=polarity_score,
+                text=f"{label} ({confidence:.2f})",
+                showarrow=True,
+                arrowhead=2,
+                font=dict(size=12)
+            )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+
+        buffer = BytesIO()
+        fig.write_image(buffer, format="png")
+        st.download_button(
+            label="📸 Download Plot as PNG",
+            data=buffer.getvalue(),
+            file_name="confidence_vs_sentiment.png",
+            mime="image/png"
+        )
+
+        if "plot_data" in st.session_state and st.session_state.plot_data:
+                df_viz = pd.DataFrame(st.session_state.plot_data)
+                st.subheader("📥 Export Session Data")
+                st.download_button(
+                    label="Download CSV",
+                    data=df_viz.to_csv(index=False),
+                    file_name="fake_news_session.csv",
+                    mime="text/csv"
+                )
+        else:
+            st.warning("⚠ No data to export yet. Try running predictions first.")
 
     st.markdown("</div>", unsafe_allow_html=True)
