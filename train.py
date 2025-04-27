@@ -25,16 +25,3 @@ if __name__ == "__main__":
     metrics_path = f"{logger.log_dir}/metrics.csv"
     df = pd.read_csv(metrics_path)
 
-    # # Drop rows without values (Lightning logs non-epoch rows too)
-    # df = df.dropna(subset=["train_acc", "val_acc"])
-
-    # plt.figure(figsize=(8, 5))
-    # plt.plot(df["epoch"], df["train_acc"], label="Train Accuracy")
-    # plt.plot(df["epoch"], df["val_acc"], label="Validation Accuracy")
-    # plt.xlabel("Epoch")
-    # plt.ylabel("Accuracy")
-    # plt.title("Train vs Validation Accuracy")
-    # plt.legend()
-    # plt.grid(True)
-    # plt.savefig("accuracy_plot.png")
-    # print("✅ Accuracy plot saved as accuracy_plot.png")
